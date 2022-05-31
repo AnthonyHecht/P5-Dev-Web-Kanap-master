@@ -67,29 +67,6 @@ function modifQtt() {
   
 };
 
-/* function supprimer() {
-  let supr = document.querySelectorAll(".deleteItem");
-  for(let i=0; i < supr.length; i++) {
-    supr[i].addEventListener("click", (event) => {
-      event.preventDefault();
-
-      let deleteId = storageList[i].id;
-      let deleteColor = storageList[i].colorChoice;
-    
-      storageList = storageList.filter( elt => elt.id !== deleteId || elt.colorChoice !== deleteColor);
-      localStorage.setItem('myArray', JSON.stringify(storageList));
-    
-      alert('Votre article a bien été supprimé.');
-    
-      if (storageList.length === 0) {
-        localStorage.clear();
-      };
-      location.reload();      
-    });
-  };
-};
- */
-
 function deleteProduct(id, color, target) {
   storageList = storageList.filter( elt => !(elt.id == id && elt.colorChoice == color))
   localStorage.setItem('myArray', JSON.stringify(storageList));
@@ -103,35 +80,7 @@ function deleteProduct(id, color, target) {
 
 //je créer mes produits dans la page panier
 async function createHtml() {
-  /* let productList = await getProductDetails();
-  for (let product of productList) {
-      document
-        .getElementById("cart__items")
-        .innerHTML += `<article class="cart__item" data-id=${product.id} data-color=${product.colorChoice}>
-        <div class="cart__item__img">
-          <img src=${product.imageUrl} alt=${product.altTxt}>
-        </div>
-        <div class="cart__item__content">
-          <div class="cart__item__content__description">
-            <h2>${product.name}</h2>
-            <p>${product.colorChoice}</p>
-            <p class="ici">${product.price}€</p>
-          </div>
-          <div class="cart__item__content__settings">
-            <div class="cart__item__content__settings__quantity">
-              <p>Qté : </p>
-              <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.number}" onchange="modifQuantity('${product.id}','${product.colorChoice}','${this.value}')">
-            </div>
-            <div class="cart__item__content__settings__delete">
-            <p class="deleteItem" onclick="suppr('${product.id}','${product.colorChoice}')">Supprimer</p>
-            </div>
-          </div>
-        </div>
-      </article>`
-  };
-  modifQtt(); */
   storageList = await getProductDetails();
-  console.log(storageList);
 
   for (let i=0; i < storageList.length; i++) {
 
@@ -215,7 +164,7 @@ async function createHtml() {
 createHtml();
 
 //fonction formulaire
-function checkForm() {
+/* function checkForm() { */
   
   const order = document.getElementById("order");
 
@@ -227,11 +176,11 @@ function checkForm() {
 
   //liste messages d'erreur
   const validError = {
-    firstNameErrorMsg: "erreur 1",
-    lastNameErrorMsg: "erreur 2",
-    addressErrorMsg: "erreur 3",
-    cityErrorMsg: "erreur 4",
-    emailErrorMsg: "erreur 5",
+    firstNameErrorMsg: "Veuillez entrer un prénom valide",
+    lastNameErrorMsg: "Veuillez entrer un nom valide",
+    addressErrorMsg: "Veuillez entrer une adresse valide",
+    cityErrorMsg: "Veuillez entrer une ville valide",
+    emailErrorMsg: "Veuillez entrer un email valide",
   }
 
   //regex
@@ -242,8 +191,7 @@ function checkForm() {
   
   order.addEventListener("click", (e) => {
     e.preventDefault();
-
-    const form = document.querySelectorAll(".cart__order__form_question");
+    const form = document.querySelectorAll(".cart__order__form__question");
 
     for (i = 0; i < form.length; i++) {
       const formInput = form[i].getElementsByTagName("input").item(0);
@@ -252,11 +200,19 @@ function checkForm() {
       let formErrorMsgP = form[i].getElementsByTagName("p").item(0);
       const cle = formErrorMsgP.attributes["id"].value;
       const inputType = formInput.attributes['type'].value;
+      const inputName = formInput.attributes['name'].value;
+      //check formulaire avec regex
       if (inputType == 'text') {
+        if (inputName == "address") {
+          if(!addressRegex.test(textInput)) {
+            const message = validError[cle];
+            formErrorMsgP.textContent = message;
+          }
+        }
         if (!nameRegex.test(textInput)) {
           const message = validError[cle];
           formErrorMsgP.textContent = message;
-          return;
+          /* return; */
         } else {
           formErrorMsgP.textContent = "";
         }
@@ -264,33 +220,35 @@ function checkForm() {
         if (!emailRegex.test(textInput)) {
           const message = validError[cle];
           formErrorMsgP.textContent = message;
-          return;
+          /* return; */
         } else {
           formErrorMsgP.textContent = "";
         }
       }
     }
     //création de l'object à envoyer dans l'API
-    
-    if(storageList) {
-      const order = {
-        contact: {
-          firstName: firstName.value,
-          lastName: lastName.value,
-          address: address.value,
-          city: city.value,
-          email: email.value,
-        },
-        products: storageList.map(ele => ele.id),
+    if (nameRegex.test(textInput) && emailRegex.test(textInput) && addressRegex.test(textInput)) {
+      if(storageList) {
+        const order = {
+          contact: {
+            firstName: firstName.value,
+            lastName: lastName.value,
+            address: address.value,
+            city: city.value,
+            email: email.value,
+          },
+          products: storageList.map(ele => ele.id),
+        };
+        postForm(order);
+      } else {
+        alert("panier vide");
       };
-      postForm(order);
-    } else {
-      alert("panier vide");
-    };
+    }
+    
     
   })
-};
-checkForm();
+/* }; */
+
 
 //envoie du formulaire
 function postForm(order) {
