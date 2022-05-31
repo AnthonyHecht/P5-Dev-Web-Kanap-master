@@ -1,102 +1,73 @@
-//je recupere l'url puis l'id de mon produit
-let str = window.location.href;
+//je récupere l'id via l'url
+const id = new URL(window.location.href).searchParams.get("id");
 
-let url = new URL(str);
+//je prépare mes sélécteurs
+let titleProduct = document.getElementById("title");
+let priceProduct = document.getElementById("price");
+let descriptionProduct = document.getElementById("description");
+let colorsProduct = document.getElementById("colors");
+let imgProduct = document.querySelector(".item__img");
+let img = document.querySelector(".item__img img");
 
-let search_params = new URLSearchParams(url.search);
+//je récupère l'article grace a l'id et j'affiche ses détails
+async function getArticle() {
+     await fetch("http://localhost:3000/api/products/" + id)
+    .then((response) => response.json())    
+    .then(product => {
+        img.setAttribute("src", product.imageUrl);
+        img.setAttribute("alt", product.altTxt);    
+        titleProduct.innerHTML = product.name;
+        priceProduct.innerHTML = product.price;
+        descriptionProduct.innerHTML = product.description;
+        document.title = product.name;
 
-let id = search_params.get('id');
+        for (let i=0; i < product.colors.length; i++) {
+            let color = document.createElement("option");
+            color.setAttribute("value", product.colors[i]);
+            color.innerHTML = product.colors[i];
+            colorsProduct.appendChild(color);
+        }  
+    });          
+};
 
-//j'initialise ma classe
-class Product {
-    constructor(altTxt, colors, description, imageUrl, name, price, id, number, colorChoice) {
-    this.altTxt = altTxt;
-    this.colors = colors;
-    this.description = description;
-    this.imageUrl = imageUrl;
-    this.name = name;
-    this.price = price;
-    this.id = id;
-    this.number = number;
-    this.colorChoice = colorChoice;
-    }
+getArticle();
+
+//fonction ajout au panier
+function addToCart() {
+    class StorageProduct {
+        constructor(id, number, colorChoice) {
+            this.id = id;
+            this.number = number;
+            this.colorChoice = colorChoice;
+        }
+      }
+    document
+          .getElementById("addToCart")
+          .addEventListener('click', function() {
+              //recup des valeurs saisies
+              let number = parseInt(document.getElementById("quantity").value);
+              let colorChoice = document.getElementById("colors").value;
+              const newProduct = new StorageProduct(id, number, colorChoice);
+              //on récup ce qui existe dans le localstorage
+              let checkLocal = localStorage.getItem('myArray');
+              //j'init productList en tableau vide pour pouvoir travailler dessus
+              let productList = [];
+              if (checkLocal != null) {
+                  productList = JSON.parse(checkLocal);
+              };
+              //find pour faire correspondre le produit au localstorage
+              if (number == 0 || colorChoice == 0) {
+                  alert("erreur");
+              } else { 
+              let found = productList.find(product => (newProduct.id == product.id && newProduct.colorChoice == product.colorChoice));
+              if (found) {
+                  found.number += newProduct.number;
+              } else {
+                  productList.push(newProduct);
+              }        
+              localStorage.setItem('myArray', JSON.stringify(productList));
+          }
+          });
 }
 
-class StorageProduct {
-    constructor(id, number, colorChoice) {
-        this.id = id;
-        this.number = number;
-        this.colorChoice = colorChoice;
-    }
-}
-
-fetch(`http://localhost:3000/api/products/${id}`)
-    .then(function(res) {
-        if (res.ok) {
-            return res.json();
-        }
-    })
-    .then(function(value) {
-        const product = new Product(value.altTxt, value.colors, value.description, value.imageUrl, value.name, value.price, value._id);
-        let img = document.querySelector(".item__img img")
-            img.src = product.imageUrl;
-            img.alt = product.altTxt;
-        document
-            .getElementById("title")
-            .innerText = product.name;
-        document
-            .getElementById("price")
-            .innerText = product.price;
-        document
-            .getElementById("description")
-            .innerText = product.description;
-        for (let color of product.colors) {
-                let option = document.createElement("option")
-                option.setAttribute("value", color)
-                option.innerText = color;
-                let colors = document.getElementById("colors")
-                colors.appendChild(option);
-        };
-    })
-    .catch(function(err) {
-        //erreur
-    });
-
-fetch(`http://localhost:3000/api/products/${id}`)
-    .then(function(res) {
-        if (res.ok) {
-            return res.json();
-        }
-    })
-    .then(function(value) {
-        document
-            .getElementById("addToCart")
-            .addEventListener('click', function() {
-                //recup des valeurs saisies
-                let number = parseInt(document.getElementById("quantity").value);
-                let colorChoice = document.getElementById("colors").value;
-                const newProduct = new StorageProduct(id, number, colorChoice);
-                //on récup ce qui existe dans le localstorage
-                let checkLocal = localStorage.getItem('myArray');
-                //j'init productList en tableau vide pour pouvoir travailler dessus
-                let productList = [];
-                if (checkLocal != null) {
-                    productList = JSON.parse(checkLocal);
-                };
-                //find pour faire correspondre le produit au localstorage
-                if (number == 0 || colorChoice == 0) {
-                    alert("erreur");
-                } else { 
-                let found = productList.find(product => (newProduct.id == product.id && newProduct.colorChoice == product.colorChoice));
-                if (found) {
-                    found.number += newProduct.number;
-                } else {
-                    productList.push(newProduct);
-                }        
-                localStorage.setItem('myArray', JSON.stringify(productList));
-            }
-            });
-    })
-    .catch(function(err) {
-        //erreur
-    });
+addToCart();

@@ -22,7 +22,7 @@ async function getProducts () {
 
 //je fais corrépondre les produits du localstorage avec ceux de l'api
 
-async function correspondance () {
+async function getProductDetails () {
     let productList = [];
     let storage = await getStorage();
     let api = await getProducts();
@@ -36,7 +36,7 @@ async function correspondance () {
 
 //fonction de calcul des prix+quantité
 async function calculTotal() {
-  let productList = await correspondance();
+  let productList = await getProductDetails();
   let totalQuantity = 0;
   let price = 0;
   let totalPrice = 0;
@@ -90,7 +90,7 @@ function modifQtt() {
 };
  */
 
-function suppr(id, color, target) {
+function deleteProduct(id, color, target) {
   storageList = storageList.filter( elt => !(elt.id == id && elt.colorChoice == color))
   localStorage.setItem('myArray', JSON.stringify(storageList));
   target.closest('section').innerHTML = '';
@@ -103,7 +103,7 @@ function suppr(id, color, target) {
 
 //je créer mes produits dans la page panier
 async function createHtml() {
-  /* let productList = await correspondance();
+  /* let productList = await getProductDetails();
   for (let product of productList) {
       document
         .getElementById("cart__items")
@@ -130,7 +130,7 @@ async function createHtml() {
       </article>`
   };
   modifQtt(); */
-  storageList = await correspondance();
+  storageList = await getProductDetails();
   console.log(storageList);
 
   for (let i=0; i < storageList.length; i++) {
@@ -205,7 +205,7 @@ async function createHtml() {
       let id = storageList[i].id;
       let color = storageList[i].colorChoice;
       let target = productSupprimer;
-      suppr(id, color, target);   
+      deleteProduct(id, color, target);   
       location.reload();   
     });
     
@@ -215,7 +215,7 @@ async function createHtml() {
 createHtml();
 
 //fonction formulaire
-function form() {
+function checkForm() {
   
   const order = document.getElementById("order");
 
@@ -290,7 +290,7 @@ function form() {
     
   })
 };
-form();
+checkForm();
 
 //envoie du formulaire
 function postForm(order) {

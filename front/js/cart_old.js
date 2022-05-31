@@ -1,98 +1,93 @@
-//je récup le contenu du localstorage
-function getStorage () {
-  let getCart = localStorage.getItem('myArray');
-  getCart = JSON.parse(getCart);
-  return getCart;
-};
-
-
-//fetch api
-async function getProducts () {
-  let array = [];  
-  await fetch("http://localhost:3000/api/products")
-    .then(function(res) {
-        if (res.ok) {
-            array = res.json();
-        }
-    })
-    .catch(function(err) {
-      //erreur
-  });
-  return array;
-};
-//corréspondance api/storage
-async function correspondance () {
-  let storage = await getStorage();
-  let api = await getProducts();
-  for (let product of storage ) {
-    let found = api.find(apiProduct => product.id === apiProduct._id);
-    return found;
+//j'initialise ma classe
+class Product {
+  constructor(altTxt, colors, description, imageUrl, name, price, id, number, colorChoice) {
+  this.altTxt = altTxt;
+  this.colors = colors;
+  this.description = description;
+  this.imageUrl = imageUrl;
+  this.name = name;
+  this.price = price;
+  this.id = id;
+  this.number = number;
+  this.colorChoice = colorChoice;
   }
 }
-console.log(correspondance());
 
-//fonction calcul
-async function calculerTotal () {
-  let totalQuantity = 0;
-  let totalPrice = 0;
-  let price = 0;
-  let storage = getStorage();
-  let api = await getProducts();
-  for (let product of storage ) {
-   let found = api.find(apiProduct => product.id === apiProduct._id && product.colorChoice === apiProduct.colors);
-    price = found.price * product.number;
-    totalQuantity += product.number;
-    totalPrice += price;
+class StorageProduct {
+  constructor(id, number, colorChoice) {
+      this.id = id;
+      this.number = number;
+      this.colorChoice = colorChoice;
   }
-  document
-  .getElementById("totalQuantity")
-  .innerText = totalQuantity;
-  document
-  .getElementById("totalPrice")
-  .innerText = totalPrice;
-};
+}
 
-//je créer mes produits dans la page panier
-for (let product of getStorage()) {
-    document
-      .getElementById("cart__items")
-      .innerHTML += `<article class="cart__item" data-id=${product.id} data-color=${product.colorChoice}>
-      <div class="cart__item__img">
-        <img src=${product.imageUrl} alt=${product.altTxt}>
-      </div>
-      <div class="cart__item__content">
-        <div class="cart__item__content__description">
-          <h2>${product.name}</h2>
-          <p>${product.colorChoice}</p>
-          <p>${product.price}€</p>
-        </div>
-        <div class="cart__item__content__settings">
-          <div class="cart__item__content__settings__quantity">
-            <p>Qté : </p>
-            <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.number}">
-          </div>
-          <div class="cart__item__content__settings__delete">
-            <p class="deleteItem">Supprimer</p>
-          </div>
-        </div>
-      </div>
-    </article>`
-};
-calculerTotal ();
-
-let itemQuantity = document.getElementsByClassName("itemQuantity");
-let storageList = getStorage();
-
-//modif quantité
-for (let item of itemQuantity) {
-  item.addEventListener("change", function() {
-    let article = item.closest("article");
-    for (let e of storageList) {
-      if (e.id == article.dataset.id) {
-        e.number = parseInt(item.value);
-        localStorage.setItem('myArray', JSON.stringify(storageList));
-        calculerTotal ();
+fetch(`http://localhost:3000/api/products/${id}`)
+  .then(function(res) {
+      if (res.ok) {
+          return res.json();
+      }
+  })
+  .then(function(value) {
+      const product = new Product(value.altTxt, value.colors, value.description, value.imageUrl, value.name, value.price, value._id);
+      let img = document.querySelector(".item__img img")
+          img.src = product.imageUrl;
+          img.alt = product.altTxt;
+      document
+          .getElementById("title")
+          .innerText = product.name;
+      document
+          .getElementById("price")
+          .innerText = product.price;
+      document
+          .getElementById("description")
+          .innerText = product.description;
+      for (let color of product.colors) {
+              let option = document.createElement("option")
+              option.setAttribute("value", color)
+              option.innerText = color;
+              let colors = document.getElementById("colors")
+              colors.appendChild(option);
       };
-    };
+  })
+  .catch(function(err) {
+      //erreur
   });
-};
+
+fetch(`http://localhost:3000/api/products/${id}`)
+  .then(function(res) {
+      if (res.ok) {
+          return res.json();
+      }
+  })
+  .then(function(value) {
+      document
+          .getElementById("addToCart")
+          .addEventListener('click', function() {
+              //recup des valeurs saisies
+              let number = parseInt(document.getElementById("quantity").value);
+              let colorChoice = document.getElementById("colors").value;
+              const newProduct = new StorageProduct(id, number, colorChoice);
+              //on récup ce qui existe dans le localstorage
+              let checkLocal = localStorage.getItem('myArray');
+              //j'init productList en tableau vide pour pouvoir travailler dessus
+              let productList = [];
+              if (checkLocal != null) {
+                  productList = JSON.parse(checkLocal);
+              };
+              //find pour faire correspondre le produit au localstorage
+              if (number == 0 || colorChoice == 0) {
+                  alert("erreur");
+              } else { 
+              let found = productList.find(product => (newProduct.id == product.id && newProduct.colorChoice == product.colorChoice));
+              if (found) {
+                  found.number += newProduct.number;
+              } else {
+                  productList.push(newProduct);
+              }        
+              localStorage.setItem('myArray', JSON.stringify(productList));
+          }
+          });
+  })
+  .catch(function(err) {
+      //erreur
+  });
