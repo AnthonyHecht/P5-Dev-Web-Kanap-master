@@ -1,10 +1,5 @@
     //je récup le localstorage
-    function getStorage() {
-    let getCart = localStorage.getItem("myArray");
-    getCart = JSON.parse(getCart);
-    return getCart;
-    }
-    let storageList = getStorage();
+    let storageList = JSON.parse(localStorage.getItem("myArray"));
     //je récup la liste de produit de l'api
     async function getProducts() {
     let array = [];
@@ -24,9 +19,8 @@
 
     async function getProductDetails() {
     let productList = [];
-    let storage = await getStorage();
     let api = await getProducts();
-    for (let product of storage) {
+    for (let product of storageList) {
         let found = api.find((apiProduct) => product.id === apiProduct._id);
         let merged = { ...product, ...found };
         productList.push(merged);
@@ -58,7 +52,13 @@
         qtt[i].addEventListener("change", (event) => {
         event.preventDefault();
 
-        storageList[i].number = qtt[i].valueAsNumber;
+        let quantityModif = storageList[i].number
+        let qttModifValue = qtt[i].valueAsNumber
+
+        const resultFind = storageList.find((el) => el.qttModifValue !== quantityModif);
+
+        resultFind.number = qttModifValue;
+        storageList[i].number = resultFind.number;
 
         localStorage.setItem("myArray", JSON.stringify(storageList));
         calculTotal();
@@ -81,13 +81,13 @@
 
     //je créer mes produits dans la page panier
     async function createHtml() {
-    storageList = await getProductDetails();
+    productList = await getProductDetails();
 
-    for (let i = 0; i < storageList.length; i++) {
+    for (let i = 0; i < productList.length; i++) {
         let productArticle = document.createElement("article");
         document.querySelector("#cart__items").appendChild(productArticle);
         productArticle.className = "cart__item";
-        productArticle.setAttribute("data-id", storageList[i].id);
+        productArticle.setAttribute("data-id", productList[i].id);
 
         let productDivImg = document.createElement("div");
         productArticle.appendChild(productDivImg);
@@ -95,8 +95,8 @@
 
         let productImg = document.createElement("img");
         productDivImg.appendChild(productImg);
-        productImg.src = storageList[i].imageUrl;
-        productImg.alt = storageList[i].altTxt;
+        productImg.src = productList[i].imageUrl;
+        productImg.alt = productList[i].altTxt;
 
         let productItemContent = document.createElement("div");
         productArticle.appendChild(productItemContent);
@@ -109,16 +109,16 @@
 
         let productTitle = document.createElement("h2");
         productItemContentDescription.appendChild(productTitle);
-        productTitle.innerHTML = storageList[i].name;
+        productTitle.innerHTML = productList[i].name;
 
         let productColor = document.createElement("p");
         productTitle.appendChild(productColor);
-        productColor.innerHTML = storageList[i].colorChoice;
+        productColor.innerHTML = productList[i].colorChoice;
         productColor.style.fontSize = "20px";
 
         let productPrice = document.createElement("p");
         productItemContentDescription.appendChild(productPrice);
-        productPrice.innerHTML = storageList[i].price + " €";
+        productPrice.innerHTML = productList[i].price + " €";
 
         let productItemContentSettings = document.createElement("div");
         productItemContent.appendChild(productItemContentSettings);
@@ -135,7 +135,7 @@
 
         let productQuantity = document.createElement("input");
         productItemContentSettingsQuantity.appendChild(productQuantity);
-        productQuantity.value = storageList[i].number;
+        productQuantity.value = productList[i].number;
         productQuantity.className = "itemQuantity";
         productQuantity.setAttribute("type", "number");
         productQuantity.setAttribute("min", "1");
@@ -154,8 +154,8 @@
         productSupprimer.addEventListener("click", (e) => {
         e.preventDefault;
 
-        let id = storageList[i].id;
-        let color = storageList[i].colorChoice;
+        let id = productList[i].id;
+        let color = productList[i].colorChoice;
         let target = productSupprimer;
         deleteProduct(id, color, target);
         location.reload();
